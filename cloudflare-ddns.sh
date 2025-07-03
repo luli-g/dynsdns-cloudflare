@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Cloudflare API Credentials
-CLOUDFLARE_API_TOKEN="hier-kommt-token"
-ZONE_ID="hier-kommt-die -zonen-id"
+CLOUDFLARE_API_TOKEN="hier-kommt-dein-CLOUDFLARE_API_TOKEN"
+ZONE_ID="hier-kommt-deine-zonen-id"
 RECORD_NAME="*.example.com"
 RECORD_TYPE="A"
 
