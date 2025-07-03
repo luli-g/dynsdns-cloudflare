@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# Cloudflare API Credentials
+#CLOUDFLARE_API_TOKEN="dein-token"
+#ZONE_ID="deine-zone-id"
+#RECORD_NAME="*.domain.tld"
+#RECORD_TYPE="A"            # Für IPv4, AAAA für IPv6
+
+
 CLOUDFLARE_API_TOKEN="hier-kommt-dein-CLOUDFLARE_API_TOKEN"
 ZONE_ID="hier-kommt-deine-zonen-id"
 RECORD_NAME="*.example.com"
