@@ -18,15 +18,13 @@ def env_vars(monkeypatch):
 
 
 @pytest.fixture()
-def config():
+def cfg():
     """Return a Config object with sensible test defaults."""
     return Config(
         api_token="test-token-abc123",
         zone_id="zone-id-xyz789",
         record_name="home.example.com",
         record_type="A",
-        log_file=None,
-        log_level="INFO",
     )
 
 

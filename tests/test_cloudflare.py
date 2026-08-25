@@ -7,17 +7,6 @@ import responses
 import pytest
 
 from cloudflare_ddns.cloudflare import BASE_URL, get_dns_record, update_dns_record
-from cloudflare_ddns.config import Config
-
-
-@pytest.fixture()
-def cfg():
-    return Config(
-        api_token="test-token-abc123",
-        zone_id="zone-id-xyz789",
-        record_name="home.example.com",
-        record_type="A",
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +121,56 @@ class TestGetDnsRecordErrors:
         with pytest.raises(requests.HTTPError):
             get_dns_record(cfg)
 
+    @responses.activate
+    def test_missing_id_field_raises_runtime_error(self, cfg):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
+            json={
+                "success": True,
+                "errors": [],
+                "result": [{"content": "1.2.3.4"}],
+            },
+            status=200,
+        )
+        with pytest.raises(RuntimeError, match="missing expected field"):
+            get_dns_record(cfg)
+
+    @responses.activate
+    def test_missing_content_field_raises_runtime_error(self, cfg):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
+            json={
+                "success": True,
+                "errors": [],
+                "result": [{"id": "record-id-001"}],
+            },
+            status=200,
+        )
+        with pytest.raises(RuntimeError, match="missing expected field"):
+            get_dns_record(cfg)
+
+    @responses.activate
+    def test_connection_error_raises(self, cfg):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
+            body=requests.ConnectionError("Connection refused"),
+        )
+        with pytest.raises(requests.ConnectionError):
+            get_dns_record(cfg)
+
+    @responses.activate
+    def test_timeout_raises(self, cfg):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
+            body=requests.Timeout("Request timed out"),
+        )
+        with pytest.raises(requests.Timeout):
+            get_dns_record(cfg)
+
 
 # ---------------------------------------------------------------------------
 # update_dns_record
@@ -220,4 +259,24 @@ class TestUpdateDnsRecordErrors:
             status=403,
         )
         with pytest.raises(requests.HTTPError):
+            update_dns_record(cfg, "record-id-001", "5.6.7.8")
+
+    @responses.activate
+    def test_connection_error_raises(self, cfg):
+        responses.add(
+            responses.PUT,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records/record-id-001",
+            body=requests.ConnectionError("Connection refused"),
+        )
+        with pytest.raises(requests.ConnectionError):
+            update_dns_record(cfg, "record-id-001", "5.6.7.8")
+
+    @responses.activate
+    def test_timeout_raises(self, cfg):
+        responses.add(
+            responses.PUT,
+            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records/record-id-001",
+            body=requests.Timeout("Request timed out"),
+        )
+        with pytest.raises(requests.Timeout):
             update_dns_record(cfg, "record-id-001", "5.6.7.8")

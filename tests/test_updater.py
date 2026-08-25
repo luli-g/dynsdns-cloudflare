@@ -6,19 +6,9 @@ import responses
 import pytest
 
 from cloudflare_ddns.cloudflare import BASE_URL
-from cloudflare_ddns.config import Config, load_config
+from cloudflare_ddns.config import load_config
 from cloudflare_ddns.ip_resolver import ENDPOINTS
 from cloudflare_ddns.updater import run_update
-
-
-@pytest.fixture()
-def cfg():
-    return Config(
-        api_token="test-token-abc123",
-        zone_id="zone-id-xyz789",
-        record_name="home.example.com",
-        record_type="A",
-    )
 
 
 def _mock_ip(ip="203.0.113.42"):
@@ -283,49 +273,9 @@ class TestIntegrationSmokeTest:
         """Exercise the entire pipeline from config loading through update."""
         cfg = load_config()
 
-        # Mock all three HTTP calls
-        responses.add(
-            responses.GET,
-            ENDPOINTS["A"],
-            body="198.51.100.99\n",
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
-            json={
-                "success": True,
-                "errors": [],
-                "result": [
-                    {
-                        "id": "int-rec-001",
-                        "type": "A",
-                        "name": cfg.record_name,
-                        "content": "10.0.0.1",
-                        "ttl": 1,
-                        "proxied": False,
-                    }
-                ],
-            },
-            status=200,
-        )
-        responses.add(
-            responses.PUT,
-            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records/int-rec-001",
-            json={
-                "success": True,
-                "errors": [],
-                "result": {
-                    "id": "int-rec-001",
-                    "type": "A",
-                    "name": cfg.record_name,
-                    "content": "198.51.100.99",
-                    "ttl": 1,
-                    "proxied": False,
-                },
-            },
-            status=200,
-        )
+        _mock_ip("198.51.100.99")
+        _mock_dns_record(zone_id=cfg.zone_id, record_id="int-rec-001", ip="10.0.0.1")
+        _mock_update(zone_id=cfg.zone_id, record_id="int-rec-001")
 
         with caplog.at_level(logging.INFO):
             result = run_update(cfg)
@@ -339,31 +289,8 @@ class TestIntegrationSmokeTest:
         """Exercise the entire pipeline when IP is already current."""
         cfg = load_config()
 
-        responses.add(
-            responses.GET,
-            ENDPOINTS["A"],
-            body="10.0.0.1\n",
-            status=200,
-        )
-        responses.add(
-            responses.GET,
-            f"{BASE_URL}/zones/{cfg.zone_id}/dns_records",
-            json={
-                "success": True,
-                "errors": [],
-                "result": [
-                    {
-                        "id": "int-rec-001",
-                        "type": "A",
-                        "name": cfg.record_name,
-                        "content": "10.0.0.1",
-                        "ttl": 1,
-                        "proxied": False,
-                    }
-                ],
-            },
-            status=200,
-        )
+        _mock_ip("10.0.0.1")
+        _mock_dns_record(zone_id=cfg.zone_id, record_id="int-rec-001", ip="10.0.0.1")
 
         with caplog.at_level(logging.INFO):
             result = run_update(cfg)
