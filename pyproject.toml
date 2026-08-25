@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudflare-ddns"
+version = "1.0.0"
+description = "Dynamic DNS updater for Cloudflare"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+    "python-dotenv>=1.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "responses>=0.25",
+]
+
+[project.scripts]
+cloudflare-ddns = "cloudflare_ddns.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
