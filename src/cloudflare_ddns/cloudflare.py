@@ -13,6 +13,13 @@ def _headers(api_token: str) -> dict[str, str]:
     }
 
 
+def _check_response_success(data: dict) -> None:
+    if not data.get("success"):
+        errors = data.get("errors", [])
+        messages = "; ".join(e.get("message", str(e)) for e in errors)
+        raise RuntimeError(f"Cloudflare API error: {messages}")
+
+
 def get_dns_record(config) -> tuple[str, str]:
     response = requests.get(
         f"{BASE_URL}/zones/{config.zone_id}/dns_records",
@@ -23,10 +30,7 @@ def get_dns_record(config) -> tuple[str, str]:
     response.raise_for_status()
 
     data = response.json()
-    if not data.get("success"):
-        errors = data.get("errors", [])
-        messages = "; ".join(e.get("message", str(e)) for e in errors)
-        raise RuntimeError(f"Cloudflare API error: {messages}")
+    _check_response_success(data)
 
     result = data.get("result", [])
     if not result:
@@ -35,7 +39,12 @@ def get_dns_record(config) -> tuple[str, str]:
             f"(type {config.record_type}) in zone {config.zone_id}"
         )
 
-    return result[0]["id"], result[0]["content"]
+    try:
+        return result[0]["id"], result[0]["content"]
+    except KeyError as exc:
+        raise RuntimeError(
+            f"Cloudflare API response missing expected field {exc}"
+        ) from exc
 
 
 def update_dns_record(config, record_id: str, new_ip: str) -> None:
@@ -54,7 +63,4 @@ def update_dns_record(config, record_id: str, new_ip: str) -> None:
     response.raise_for_status()
 
     data = response.json()
-    if not data.get("success"):
-        errors = data.get("errors", [])
-        messages = "; ".join(e.get("message", str(e)) for e in errors)
-        raise RuntimeError(f"Cloudflare API error: {messages}")
+    _check_response_success(data)

@@ -12,7 +12,10 @@ def main() -> None:
 
     handlers: list[logging.Handler] = [logging.StreamHandler(sys.stdout)]
     if config.log_file:
-        handlers.append(logging.FileHandler(config.log_file))
+        try:
+            handlers.append(logging.FileHandler(config.log_file))
+        except OSError as exc:
+            sys.exit(f"Cannot open log file '{config.log_file}': {exc}")
 
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s] %(message)s",

@@ -14,12 +14,14 @@ VALIDATORS = {
     "AAAA": ipaddress.IPv6Address,
 }
 
+TIMEOUT = 10
+
 
 def get_public_ip(record_type: str) -> str:
     if record_type not in ENDPOINTS:
         raise ValueError(f"Unsupported record type: {record_type!r}. Must be 'A' or 'AAAA'.")
 
-    response = requests.get(ENDPOINTS[record_type], timeout=10)
+    response = requests.get(ENDPOINTS[record_type], timeout=TIMEOUT)
     response.raise_for_status()
     ip_text = response.text.strip()
 
